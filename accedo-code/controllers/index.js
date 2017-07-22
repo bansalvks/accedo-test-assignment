@@ -1,28 +1,30 @@
+var path = require('path');
 var express = require('express');
 var router = express.Router();
 
-var usersV1 = require(global.appPath + 'controllers/v1/users.c.js')
-var authV1 = require(global.appPath + 'controllers/v1/auth.c.js')
-var moviesV1 = require(global.appPath + 'controllers/v1/movies.c.js')
-var historyV1 = require(global.appPath + 'controllers/v1/history.c.js')
-var favoriteV1 = require(global.appPath + 'controllers/v1/favorite.c.js')
+var fsHelper = require(global.appPath + 'helpers/fs.h.js')
 
-var authMid = require(global.appPath + 'middlewares/auth.mid.js');
+/// getting direcoties containg apies
+var apiDirectories = fsHelper.getDirectories(__dirname);
 
+/// getting all controllers
+var controllersList = [];
+apiDirectories.forEach(function (p) {
+  controllersList = fsHelper.getAllFiles(path.normalize(__dirname + "/" + p));
+}, this);
 
-router.use('/v1/users', authMid)
-router.use('/v1/users', usersV1)
+/// routing all controllers
+controllersList.forEach(function (api) {
+  var extension = path.parse(api)
+  if (extension.ext.toLowerCase() === '.js') {
+    var start = __dirname.length;
+    var end = api.length - 3; /// minus 3 for removing extension
 
-router.use('/v1/movies', authMid)
-router.use('/v1/movies', moviesV1)
+    /// api path
+    var apiPath = api.substring(start, end);
 
-router.use('/v1/history', authMid)
-router.use('/v1/history', historyV1)
-
-router.use('/v1/favorite', authMid)
-router.use('/v1/favorite', favoriteV1)
-
-
-router.use('/v1/auth', authV1)
+    router.use(apiPath, require(api));
+  }
+}, this);
 
 module.exports = router
